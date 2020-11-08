@@ -1,0 +1,44 @@
+{% load static %}
+{% if show_graphs %}
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#graphs_modal_plugin" data-obj="{{ device.name }}" data-url="{% url 'plugins-api:netbox_graphs-api:return-graphs-detail' model=type pk=object_pk %}" title="Show graphs">
+    <i class="fa fa-signal" aria-hidden="true"></i>
+    Graphs
+</button>
+
+
+{% block javascript %}
+<script src="{% static 'jquery/jquery-3.5.1.min.js' %}"
+        onerror="window.location='{% url 'media_failure' %}?filename=jquery/jquery-3.5.1.min.js'"></script>
+<script src="{% static 'jquery-ui-1.12.1/jquery-ui.min.js' %}"
+        onerror="window.location='{% url 'media_failure' %}?filename=jquery-ui-1.12.1/jquery-ui.min.js'"></script>
+<script type="text/javascript">
+$('#graphs_modal_plugin').on('show.bs.modal', function (event) {
+    console.log("yay");
+    var button = $(event.relatedTarget);
+    var obj = button.data('obj');
+    var url = button.data('url');
+    var modal_title = $(this).find('.modal-title');
+    var modal_body = $(this).find('.modal-body');
+    modal_title.text(obj);
+    modal_body.empty();
+    $.ajax({
+        url: url,
+        dataType: 'json',
+        success: function(json) {
+            $.each(json, function(i, graph) {
+                // Build in a 500ms delay per graph to avoid hammering the server
+                setTimeout(function() {
+                    modal_body.append('<h4 class="text-center">' + graph.name + '</h4>');
+                    if (graph.embed_link) {
+                        modal_body.append('<a href="' + graph.embed_link + '"><img src="' + graph.embed_url + '" /></a>');
+                    } else {
+                        modal_body.append('<img src="' + graph.embed_url + '" />');
+                    }
+                }, i*500);
+            })
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endif %}
